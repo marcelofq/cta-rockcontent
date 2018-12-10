@@ -3,7 +3,7 @@ defined( 'ABSPATH' ) or die( 'No script kiddies please!' );
 
 /*
 Plugin Name:  Call To Action - RockContent
-Plugin URI:   https://developer.wordpress.org/plugins/the-basics/
+Plugin URI:   http://www.marcelofq.com.br/
 Description:  A CTA WordPress plugin for RockContent Technical Challenge Job Interview
 Version:      1.0
 Author:       Marcelo Fiuza
@@ -14,11 +14,9 @@ Text Domain:  wporg
 Domain Path:  /cta-rockcontent
 */
 
-//Adicionando a função que cria o custom post type cta-banner na action init do wordpress
-add_action( 'init', 'cta_banner_custom_post_type', 0 );
-
-// CTA Banner Register Custom Post Type Function
-function cta_banner_custom_post_type() {
+// Plugin main function that creates a custom post type called cta-banner and add it to wordpress init action
+add_action( 'init', 'cta_rockcontent_init', 0 );
+function cta_rockcontent_init() {
 
 	$labels = array(
 		'name'                  => _x( "CTA's", 'Post Type General Name', 'cta-rockcontent' ),
@@ -46,18 +44,19 @@ function cta_banner_custom_post_type() {
 		'register_meta_box_cb'  => 'cta_banner_add_metabox',
 		'capability_type'       => 'post'
 	);
-	//Registrando o custom post type cta-banner
+	// Registering the custom post type cta-banner
 	register_post_type( 'cta-banner', $args );
-	
-	//Adding custom imagem size (cta-banner-size)
+
+	// Adding custom imagem size (cta-banner-size)
 	add_image_size( 'cta-banner-size', 960, 300, true ); // hard crop mode	
 
-	//Funcao para adicionar o metabox da URL do banner
+	// Function to add the metabox url banner
 	function cta_banner_add_metabox(){
-		//Adicionando o campo de URL no custom post type cta-banner
+		// Adding the URL banner field into custom post type cta-banner
 		add_meta_box( 'cta-banner-url', 'URL', 'cta_banner_url_html', 'cta-banner', 'normal', 'high' );
 	}
 
+	//Callback of add_meta_box 
 	function cta_banner_url_html(){
 		global $post;
 
@@ -67,11 +66,9 @@ function cta_banner_custom_post_type() {
 		// Get the url data if it's already entered
 		$url = get_post_meta( $post->ID, 'cta-banner-url', true );
 
-		//
 		echo '<p>';
 	    echo '<input id="cta_banner_url_input" type="text" name="cta_banner_url_text_input" value="' . esc_url( $url ) . '" style="width: 100%;" /></p>';
-	    echo '<p>Link de para onde o CTA deve redirecionar o usuário. Informe a url completa. ex: https://blog.com.br/meu-ebook</p>';
-
+	    echo '<p>'. __( 'Link de para onde o CTA deve redirecionar o usuário. Informe a url completa. ex: https://blog.com.br/meu-ebook', 'cta-rockcontent' ) .'</p>';
 	}
 
 
@@ -88,6 +85,7 @@ function cta_banner_custom_post_type() {
 				
 				//Return CTA's banner with link, or just banner image
 				$cta_banner_url = get_post_meta( $cta->ID, 'cta-banner-url', true);
+
 				if(!is_null($cta_banner_url)){
 					//Verify if the CTA has title to use it on link title attribute
 					$cta_title = !empty($cta->post_title)?' title="'.$cta->post_title.'" ':'';
@@ -100,47 +98,51 @@ function cta_banner_custom_post_type() {
 
 		} else return;
 	}
-}
 
-// CTA Banner Metabox Data Function
-add_action( 'save_post', 'cta_banner_save_meta' );
-function cta_banner_save_meta( $post_id ) {
-	// Return if the user doesn't have edit permissions.
-	if ( ! current_user_can( 'edit_post', $post_id ) ) {
-		return $post_id;
+	// CTA Banner Metabox Save Data Function
+	add_action( 'save_post', 'cta_banner_save_meta' );
+	function cta_banner_save_meta( $post_id ) {
+		// Return if the user doesn't have edit permissions.
+		if ( ! current_user_can( 'edit_post', $post_id ) ) {
+			return $post_id;
+		}
+
+		// Check if our nonce is set.
+	    if ( ! isset( $_POST['cta_banner_nonce'] ) ) {
+	        return $post_id;
+	    }
+
+	    $nonce = $_POST['cta_banner_nonce'];
+
+	    // Verify that the nonce is valid.
+	    if ( ! wp_verify_nonce( $nonce, 'cta_banner' ) ) {
+	        return $post_id;
+	    }
+	    /*
+	     * If this is an autosave, our form has not been submitted,
+	     * so we don't want to do anything.
+	     */
+	    if ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE ) {
+	        return $post_id;
+	    }
+
+
+	    // Sanitize the user input.
+	    $url = sanitize_text_field( $_POST['cta_banner_url_text_input'] );
+	    //Verify if is a valid url
+	    if(filter_var($url, FILTER_VALIDATE_URL)){
+	    	// Update the meta field.
+		    if ( get_post_meta( $post_id, 'cta-banner-url', true ) ) {
+				// If the custom field already has a value, update it.
+				update_post_meta( $post_id, 'cta-banner-url', $url );
+			} else {
+				if(!empty($url)) {
+					// If the custom field doesn't have a value and new value has input, add it.
+					add_post_meta( $post_id, 'cta-banner-url', $url);
+				}
+			}
+	    } else return $post_id; // Not valid URL
+	    	
 	}
-
-	// Check if our nonce is set.
-    if ( ! isset( $_POST['cta_banner_nonce'] ) ) {
-        return $post_id;
-    }
-
-    $nonce = $_POST['cta_banner_nonce'];
-
-    // Verify that the nonce is valid.
-    if ( ! wp_verify_nonce( $nonce, 'cta_banner' ) ) {
-        return $post_id;
-    }
-    /*
-     * If this is an autosave, our form has not been submitted,
-     * so we don't want to do anything.
-     */
-    if ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE ) {
-        return $post_id;
-    }
-
-
-    // Sanitize the user input.
-    $url = sanitize_text_field( $_POST['cta_banner_url_text_input'] );
-
-    // Update the meta field.
-    if ( get_post_meta( $post_id, 'cta-banner-url', true ) ) {
-		// If the custom field already has a value, update it.
-		update_post_meta( $post_id, 'cta-banner-url', $url );
-	} else {
-		// If the custom field doesn't have a value, add it.
-		add_post_meta( $post_id, 'cta-banner-url', $url);
-	}
-    	
 }
 ?>
