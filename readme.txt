@@ -2,8 +2,8 @@
 Contributors: marcelofq
 Tags: cta, custom_post_type, shortcodes, metaboxes
 Donate link: https://www.marcelofq.com.br/
-Requires at least: 7.2.8
-Tested up to: 7.2.8
+Requires at least: 5.0
+Tested up to: 5.0
 Requires PHP: 5.6
 Stable tag: 1.1
 License: GPLv2 or later
