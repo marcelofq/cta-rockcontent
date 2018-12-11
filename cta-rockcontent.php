@@ -15,6 +15,7 @@ Domain Path:  /cta-rockcontent
 */
 
 // Plugin main function that creates a custom post type called cta-banner and add it to wordpress init action
+
 class CTA_RockContent {
 
 	const POST_TYPE	= "cta-banner";
@@ -23,7 +24,9 @@ class CTA_RockContent {
 		add_action('init', array(&$this, 'init'));
 	}
 
-
+	/************************* 
+	   Initialize Function 
+	**************************/
 	public function init(){
 		// Adding custom imagem size (cta-banner-size)
 		add_image_size( 'cta-banner-size', 960, 300, true ); // hard crop mode
@@ -37,12 +40,38 @@ class CTA_RockContent {
 		//Action to save the metabox value
 		add_action( 'save_post', array($this, 'cta_banner_save_meta' ));
 	}
-	
 
+	/***********************************************************
+		Shortcode function to return banner in html elements
+	************************************************************/
+	public function cta_rockcontent_shortcode_show_html( $atts ){
+		//Verify if array $atts has the 'id' param, and if is not empty and has a numeric value
+		if(isset($atts['id']) && !empty($atts['id']) && is_numeric($atts['id'])) { 
+			$cta = get_post($atts['id']);
+			if($cta){
+				//Check if the post has thumbnail
+				$featured_image = has_post_thumbnail($cta) ? get_the_post_thumbnail( $cta, 'cta-banner-size' ) : '';
+				
+				//Return CTA's banner with link, or just banner image
+				$cta_banner_url = get_post_meta( $cta->ID, 'cta-banner-url', true);
+
+				if(!is_null($cta_banner_url)){
+					//Verify if the CTA has title to use it on link title attribute
+					$cta_title = !empty($cta->post_title)?' title="'.$cta->post_title.'" ':'';
+					//And then return link html element
+					return '<a href="' . $cta_banner_url . '" ' . $cta_title . ' >'. $featured_image . '</a>';
+
+				} else return $featured_image; //return just the featured image
+
+			} else return __("#ERROR: No CTA's has found with id=" . $atts['id'], 'cta-rockcontent');
+
+		} else return;
+	}
+	
 	/************************* 
 	   Create the post type
 	**************************/
-	public function create_post_type(){
+	private function create_post_type(){
 
 		$labels = array(
 		'name'                  => _x( "CTA's", 'Post Type General Name', 'cta-rockcontent' ),
@@ -70,26 +99,23 @@ class CTA_RockContent {
 			'register_meta_box_cb'  => array( $this, 'cta_banner_add_metabox' ),
 			'capability_type'       => 'post'
 		);
-		// Registering the custom post type cta-banner
+		// Registering the custom post type called cta-banner
 		register_post_type( self::POST_TYPE, $args );
 
 	}
 
-
-
 	/******************************************* 
 	   Function to add the metabox url banner
 	********************************************/
-	public function cta_banner_add_metabox(){
+	private function cta_banner_add_metabox(){
 		// Adding the URL banner field into custom post type cta-banner
 		add_meta_box( 'cta-banner-url', 'URL', array( $this, 'cta_banner_url_html'), 'cta-banner', 'normal', 'high' );
 	}
 
-	
 	/***************************************************** 
 	   Function to create URL field on CTA new/edit page
 	******************************************************/
-	public function cta_banner_url_html(){
+	private function cta_banner_url_html(){
 		global $post;
 
 		// Nonce field to validade form request cam from current site
@@ -106,7 +132,7 @@ class CTA_RockContent {
 	/***************************************** 
 	   CTA Banner Metabox Save Data Function
 	*****************************************/
-	public function cta_banner_save_meta( $post_id ) {
+	private function cta_banner_save_meta( $post_id ) {
 		// Return if the user doesn't have edit permissions.
 		if ( ! current_user_can( 'edit_post', $post_id ) ) {
 			return $post_id;
@@ -131,54 +157,33 @@ class CTA_RockContent {
 	        return $post_id;
 	    }
 
-
 	    // Sanitize the user input
 	    $url = sanitize_text_field( $_POST['cta_banner_url_text_input'] );
-	    //Verify if is a valid url
-	    if(filter_var($url, FILTER_VALIDATE_URL)){
-	    	// Update the meta field.
-		    if ( get_post_meta( $post_id, 'cta-banner-url', true ) ) {
-				// If the custom field already has a value, update it.
-				update_post_meta( $post_id, 'cta-banner-url', $url );
-			} else {
-				if(!empty($url)) {
-					// If the custom field doesn't have a value and new value has input, add it.
-					add_post_meta( $post_id, 'cta-banner-url', $url);
-				}
-			}
-	    } else return $post_id; // Not valid URL
+
+	    // Verify if is not empty url
+	    if(empty($url)) {
+	    	if ( get_post_meta( $post_id, 'cta-banner-url', true ) ) 
+	    		delete_post_meta( $post_id, 'cta-banner-url');
 	    	
-	}
+	    	return $post_id;
+		}
 
-	
-	/***********************************************************************
-		Shortcode - Shortcode function to return banner in html elements
-	************************************************************************/
-	public function cta_rockcontent_shortcode_show_html( $atts ){
-		//Verify if array $atts has the 'id' param, and if is not empty and has a numeric value
-		if(isset($atts['id']) && !empty($atts['id']) && is_numeric($atts['id'])) { 
-			$cta = get_post($atts['id']);
-			if($cta){
-				//Check if the post has thumbnail
-				$featured_image = has_post_thumbnail($cta) ? get_the_post_thumbnail( $cta, 'cta-banner-size' ) : '';
-				
-				//Return CTA's banner with link, or just banner image
-				$cta_banner_url = get_post_meta( $cta->ID, 'cta-banner-url', true);
+	    // Verify if is a valid url
+	    if( ! filter_var($url, FILTER_VALIDATE_URL)){
+	    	return $post_id;
+	    }
 
-				if(!is_null($cta_banner_url)){
-					//Verify if the CTA has title to use it on link title attribute
-					$cta_title = !empty($cta->post_title)?' title="'.$cta->post_title.'" ':'';
-					//And then return link html element
-					return '<a href="' . $cta_banner_url . '" ' . $cta_title . ' >'. $featured_image . '</a>';
+    	// Update the meta field.
+	    if ( get_post_meta( $post_id, 'cta-banner-url', true ) ) {		
+			// If the custom field already has a value, update it.
+			update_post_meta( $post_id, 'cta-banner-url', $url );
+		} else {
+			//Adding banner url
+		    add_post_meta( $post_id, 'cta-banner-url', $url);
+		}    	
+	}//End of cta_banner_save_meta function
 
-				} else return $featured_image; //return just the featured image
-
-			} else return __("#ERROR: No CTA's has found with id=" . $atts['id'], 'cta-rockcontent');
-
-		} else return;
-	}
-
-}//End of Class CTA_RockContent
+}//End of CTA_RockContent Class
 
 if(class_exists('CTA_RockContent'))
 {
