@@ -108,7 +108,7 @@ class CTA_RockContent {
 	/******************************************* 
 	   Function to add the metabox url banner
 	********************************************/
-	private function cta_banner_add_metabox(){
+	public function cta_banner_add_metabox(){
 		// Adding the URL banner field into custom post type cta-banner
 		add_meta_box( 'cta-banner-url', 'URL', array( $this, 'cta_banner_url_html'), 'cta-banner', 'normal', 'high' );
 	}
@@ -116,7 +116,7 @@ class CTA_RockContent {
 	/***************************************************** 
 	   Function to create URL field on CTA new/edit page
 	******************************************************/
-	private function cta_banner_url_html(){
+	public function cta_banner_url_html(){
 		global $post;
 
 		// Nonce field to validade form request cam from current site
@@ -133,7 +133,7 @@ class CTA_RockContent {
 	/***************************************** 
 	   CTA Banner Metabox Save Data Function
 	*****************************************/
-	private function cta_banner_save_meta( $post_id ) {
+	public function cta_banner_save_meta( $post_id ) {
 		// Return if the user doesn't have edit permissions.
 		if ( ! current_user_can( 'edit_post', $post_id ) ) {
 			return $post_id;
