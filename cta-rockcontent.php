@@ -42,7 +42,7 @@ class CTA_RockContent {
 	}
 
 	/***********************************************************
-		Shortcode function to return banner in html elements
+	   Shortcode function to return banner in html elements
 	************************************************************/
 	public function cta_rockcontent_shortcode_show_html( $atts ){
 		//Verify if array $atts has the 'id' param, and if is not empty and has a numeric value
@@ -79,6 +79,7 @@ class CTA_RockContent {
 		'menu_name'             => __( "CTA's", 'cta-rockcontent' ),
 		'name_admin_bar'        => __( 'CTA', 'cta-rockcontent' )
 		);
+		
 		$args = array(
 			'label'                 => __( 'CTA', 'cta-rockcontent' ),
 			'description'           => __( 'Call to Action', 'cta-rockcontent' ),
@@ -139,47 +140,47 @@ class CTA_RockContent {
 		}
 
 		// Check if our nonce is set.
-	    if ( ! isset( $_POST['cta_banner_nonce'] ) ) {
-	        return $post_id;
-	    }
-
-	    $nonce = $_POST['cta_banner_nonce'];
-
-	    // Verify that the nonce is valid.
-	    if ( ! wp_verify_nonce( $nonce, 'cta_banner' ) ) {
-	        return $post_id;
-	    }
-	    /*
-	     * If this is an autosave, our form has not been submitted,
-	     * so we don't want to do anything.
-	     */
-	    if ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE ) {
-	        return $post_id;
-	    }
-
-	    // Sanitize the user input
-	    $url = sanitize_text_field( $_POST['cta_banner_url_text_input'] );
-
-	    // Verify if is not empty url
-	    if(empty($url)) {
-	    	if ( get_post_meta( $post_id, 'cta-banner-url', true ) ) 
-	    		delete_post_meta( $post_id, 'cta-banner-url');
-	    	
-	    	return $post_id;
+		if ( ! isset( $_POST['cta_banner_nonce'] ) ) {
+			return $post_id;
 		}
 
-	    // Verify if is a valid url
-	    if( ! filter_var($url, FILTER_VALIDATE_URL)){
-	    	return $post_id;
-	    }
+		$nonce = $_POST['cta_banner_nonce'];
 
-    	// Update the meta field.
-	    if ( get_post_meta( $post_id, 'cta-banner-url', true ) ) {		
+		// Verify that the nonce is valid.
+		if ( ! wp_verify_nonce( $nonce, 'cta_banner' ) ) {
+			return $post_id;
+		}
+		/*
+		* If this is an autosave, our form has not been submitted,
+		* so we don't want to do anything.
+		*/
+		if ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE ) {
+			return $post_id;
+		}
+
+		// Sanitize the user input
+		$url = sanitize_text_field( $_POST['cta_banner_url_text_input'] );
+
+		// Verify if is not empty url
+		if(empty($url)) {
+			if ( get_post_meta( $post_id, 'cta-banner-url', true ) ) 
+				delete_post_meta( $post_id, 'cta-banner-url');
+
+			return $post_id;
+		}
+
+		// Verify if is a valid url
+		if( ! filter_var($url, FILTER_VALIDATE_URL)){
+			return $post_id;
+		}
+
+		// Update the meta field.
+		if ( get_post_meta( $post_id, 'cta-banner-url', true ) ) {		
 			// If the custom field already has a value, update it.
 			update_post_meta( $post_id, 'cta-banner-url', $url );
 		} else {
 			//Adding banner url
-		    add_post_meta( $post_id, 'cta-banner-url', $url);
+			add_post_meta( $post_id, 'cta-banner-url', $url);
 		}    	
 	}//End of cta_banner_save_meta function
 
