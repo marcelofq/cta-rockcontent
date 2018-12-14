@@ -46,26 +46,36 @@ class CTA_RockContent {
 	************************************************************/
 	public function cta_rockcontent_shortcode_show_html( $atts ){
 		//Verify if array $atts has the 'id' param, and if is not empty and has a numeric value
-		if(isset($atts['id']) && !empty($atts['id']) && is_numeric($atts['id'])) { 
-			$cta = get_post($atts['id']);
-			if($cta){
-				//Check if the post has thumbnail
-				$featured_image = has_post_thumbnail($cta) ? get_the_post_thumbnail( $cta, 'cta-banner-size' ) : '';
-				
-				//Return CTA's banner with link, or just banner image
-				$cta_banner_url = get_post_meta( $cta->ID, 'cta-banner-url', true);
+		if(!isset($atts['id']) || empty($atts['id']) || !is_numeric($atts['id'])) { 
+			return;
+		}
 
-				if(!is_null($cta_banner_url)){
-					//Verify if the CTA has title to use it on link title attribute
-					$cta_title = !empty($cta->post_title)?' title="'.$cta->post_title.'" ':'';
-					//And then return link html element
-					return '<a href="' . $cta_banner_url . '" ' . $cta_title . ' >'. $featured_image . '</a>';
+		$cta = get_post($atts['id']);
+		if(!$cta){
+			return __("#ERROR: No CTA's has found with id=" . $atts['id'], 'cta-rockcontent');
+		}
+		
+		//Check if the post has thumbnail
+		if(!has_post_thumbnail($cta)){
+			return;
+		}
+		
+		//Get the featured image
+		$featured_image = get_the_post_thumbnail( $cta, 'cta-banner-size' );
+		
+		//Get banner URL
+		$cta_banner_url = get_post_meta( $cta->ID, 'cta-banner-url', true);
 
-				} else return $featured_image; //return just the featured image
+		//Return just banner image if URL is empty
+		if(empty($cta_banner_url)){
+			return $featured_image; 
+		}
+			
+		//Verify if the CTA has title to use it as title attribute
+		$cta_title = !empty($cta->post_title)?$cta->post_title:'';	
 
-			} else return __("#ERROR: No CTA's has found with id=" . $atts['id'], 'cta-rockcontent');
-
-		} else return;
+		//And then return image link html element
+		return sprintf('<a href="%s" title="%s">%s</a>', $cta_banner_url, $cta_title, $featured_image);
 	}
 	
 	/************************* 
